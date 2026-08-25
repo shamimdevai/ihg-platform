@@ -1,0 +1,1 @@
+"""Shared Pydantic schemas (response envelope, pagination, filters)."""

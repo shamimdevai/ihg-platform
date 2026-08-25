@@ -1,0 +1,1 @@
+"""Raw DB-query repositories for shared_kernel models."""

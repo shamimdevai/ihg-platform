@@ -1,0 +1,1 @@
+"""Framework-level configuration and primitives. No business rules live here."""

@@ -1,0 +1,1 @@
+"""Shared, non-domain-specific endpoints (health check, generic upload/document routes)."""

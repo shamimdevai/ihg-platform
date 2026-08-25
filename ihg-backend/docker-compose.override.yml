@@ -1,0 +1,38 @@
+services:
+  api:
+    build:
+      dockerfile: docker/Dockerfile.dev
+    volumes:
+      - .:/app
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    # NOTE: the previous `ports: ["8000:8000"]` mapping has been removed
+    # here — this is the key change for this subtask. The api must not
+    # be reachable from the host at all anymore, in dev or prod; only
+    # nginx and other containers can reach it now.
+
+  db:
+    ports:
+      - "5432:5432"
+
+  mailpit:
+    image: axllent/mailpit
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ../ihg-frontend
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ../ihg-frontend:/app
+      - /app/node_modules
+    expose:
+      - "5173"
+    depends_on:
+      - api
+
+  nginx:
+    volumes:
+      - ./docker/nginx/nginx.dev.conf:/etc/nginx/nginx.conf:ro

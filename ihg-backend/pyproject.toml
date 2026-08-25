@@ -1,0 +1,26 @@
+[project]
+name = "ihg-platform-api"
+version = "0.1.0"
+description = "IHG Platform — Enterprise Hospitality, Restaurant & Food Delivery Management Platform (Backend API)"
+requires-python = ">=3.11,<3.12"
+
+[tool.black]
+line-length = 100
+target-version = ["py311"]
+
+[tool.isort]
+profile = "black"
+line_length = 100
+
+[tool.mypy]
+python_version = "3.11"
+ignore_missing_imports = true
+disallow_untyped_defs = false
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+# Explicit per PROJECT_STATE.md Phase 4.5 test-infra fix: each async test function
+# gets its own event loop. Paired with tests/conftest.py's dedicated NullPool test
+# engine, which ensures no asyncpg connection is ever reused across a loop boundary.
+asyncio_default_fixture_loop_scope = "function"
+testpaths = ["tests"]

@@ -1,0 +1,98 @@
+# =========================================================
+# IHG Platform - Root Git Ignore
+# =========================================================
+
+# -------------------------
+# Environment / Secrets
+# -------------------------
+.env
+.env.*
+!.env.example
+
+# Backend environment files
+ihg-backend/.env
+ihg-backend/.env.*
+!ihg-backend/.env.example
+
+# Frontend environment files
+ihg-frontend/.env
+ihg-frontend/.env.*
+!ihg-frontend/.env.example
+
+
+# -------------------------
+# Python / Backend
+# -------------------------
+__pycache__/
+*.py[cod]
+*.pyo
+
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+.venv/
+venv/
+ENV/
+env/
+
+# Backend-specific
+ihg-backend/.pytest_cache/
+ihg-backend/.venv/
+
+
+# -------------------------
+# Node / Frontend
+# -------------------------
+node_modules/
+ihg-frontend/node_modules/
+
+dist/
+build/
+
+ihg-frontend/dist/
+ihg-frontend/build/
+
+
+# -------------------------
+# IDE
+# -------------------------
+.idea/
+.vscode/
+
+*.iml
+
+
+# -------------------------
+# OS
+# -------------------------
+.DS_Store
+Thumbs.db
+
+
+# -------------------------
+# Logs
+# -------------------------
+*.log
+
+
+# -------------------------
+# Temporary files
+# -------------------------
+*.tmp
+*.temp
+
+
+# -------------------------
+# Coverage
+# -------------------------
+.coverage
+htmlcov/
+.pytest_cache/
+
+
+# -------------------------
+# Uploads / Runtime data
+# -------------------------
+ihg-backend/uploads/*
+!ihg-backend/uploads/.gitkeep

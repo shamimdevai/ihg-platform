@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>Welcome</title></head>
+<body style="font-family: Arial, sans-serif; margin:0; padding:0; background:#f4f4f4;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px; margin:0 auto; background:#ffffff;">
+    <tr>
+      <td style="background:{{ primary_color }}; padding:24px; text-align:center;">
+        <img src="{{ logo_url }}" alt="{{ company_name }}" style="max-height:48px;">
+      </td>
+    </tr>
+    <tr>
+      <td style="padding:32px;">
+        <h1 style="color:{{ primary_color }};">Welcome, {{ recipient_name }}!</h1>
+        <p>Thank you for joining {{ company_name }}. We're glad to have you.</p>
+      </td>
+    </tr>
+    <tr>
+      <td style="background:#f4f4f4; padding:16px; text-align:center; font-size:12px; color:#888888;">
+        {{ footer_text }}<br>
+        Questions? Contact us at <a href="mailto:{{ support_email }}" style="color:{{ secondary_color }};">{{ support_email }}</a>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

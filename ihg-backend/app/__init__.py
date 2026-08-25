@@ -1,0 +1,1 @@
+"""IHG Platform API application package."""
