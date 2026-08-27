@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.v1.deps import get_current_staff_user, get_db
 from app.domains.iam.models.staff_user import StaffUser
+from app.domains.iam.repositories import role_repository
 from app.domains.iam.schemas.auth import (
     AcceptInviteRequest,
     ChangePasswordRequest,
@@ -13,7 +14,9 @@ from app.domains.iam.schemas.auth import (
     LoginRequest,
     RefreshRequest,
     ResetPasswordRequest,
+    StaffMeRead,
 )
+from app.domains.iam.schemas.role import RoleRead
 from app.domains.iam.services import auth_service, staff_service
 from app.shared_kernel.schemas.response_envelope import envelope
 
@@ -28,6 +31,33 @@ async def login(payload: LoginRequest, request: Request, db: AsyncSession = Depe
         db, email=payload.email, password=payload.password, device_info=device_info
     )
     return envelope(data=tokens, message="Login successful.")
+
+
+@router.get("/me")
+async def get_my_profile(
+    staff: StaffUser = Depends(get_current_staff_user), db: AsyncSession = Depends(get_db)
+) -> dict:
+    """Return the current staff member's own profile, role, and that role's
+    permissions — gated only by having a valid token (no require_permission).
+
+    This is the one endpoint every authenticated staff member can call to
+    learn their own role/permissions, independent of whether they separately
+    hold iam:staff:read or iam:roles:read. Intended to back client-side
+    hasPermission() nav-gating (frontend Phase 2/5).
+    """
+    role = await role_repository.get_by_id(db, staff.role_id)
+    me = StaffMeRead(
+        id=staff.id,
+        email=staff.email,
+        first_name=staff.first_name,
+        last_name=staff.last_name,
+        department_id=staff.department_id,
+        is_active=staff.is_active,
+        is_superadmin=staff.is_superadmin,
+        last_login_at=staff.last_login_at,
+        role=RoleRead.model_validate(role),
+    )
+    return envelope(data=me)
 
 
 @router.post("/refresh")

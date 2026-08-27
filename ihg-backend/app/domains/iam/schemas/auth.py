@@ -1,8 +1,11 @@
 """Auth-related request/response schemas."""
+from datetime import datetime
 from typing import Optional
 from uuid import UUID
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
+
+from app.domains.iam.schemas.role import RoleRead
 
 
 class LoginRequest(BaseModel):
@@ -62,3 +65,34 @@ class AcceptInviteRequest(BaseModel):
 
     token: str
     new_password: str = Field(min_length=8)
+
+
+class StaffMeRead(BaseModel):
+    """Response for GET /iam/auth/me — the current staff member's own profile,
+    including their role AND that role's permissions (nested via RoleRead).
+
+    Added to close a real gap: POST /iam/auth/login only returns tokens, and
+    GET /iam/staff/{id} / GET /iam/roles/{id} are both permission-gated
+    (iam:staff:read / iam:roles:read respectively) — meaning a staff member
+    without one of those permissions previously had NO endpoint to call to
+    learn their own role or permission list. hasPermission()-style client-side
+    nav-gating had nothing to check against for any non-superadmin role that
+    doesn't happen to hold iam:staff:read or iam:roles:read (e.g. Waiter,
+    Housekeeping, Kitchen, Rider).
+
+    Deliberately gated by authentication only (get_current_staff_user), NOT by
+    require_permission — every staff member must be able to ask "who am I /
+    what can I do", regardless of what else they're allowed to see.
+    """
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    email: EmailStr
+    first_name: str
+    last_name: str
+    department_id: Optional[UUID] = None
+    is_active: bool
+    is_superadmin: bool
+    last_login_at: Optional[datetime] = None
+    role: RoleRead

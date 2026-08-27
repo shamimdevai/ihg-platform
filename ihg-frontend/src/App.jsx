@@ -1,36 +1,69 @@
+import { useEffect } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
+import { useAppConfig } from './hooks/useAppConfig'
+import StaffRoutes from './routes/staffRoutes'
+import CustomerRoutes from './routes/customerRoutes'
 
-// Placeholder only — Phase 1 wraps this in the /config bootstrap gate,
-// and Phases 2/3/5/6 replace these placeholders with the real
-// StaffProtectedRoute / CustomerProtectedRoute route trees.
-function AdminPlaceholder() {
+function FullPageLoading() {
   return (
-    <div className="p-8">
-      <h1 className="text-2xl font-bold text-navy">Staff Portal</h1>
-      <p className="text-gray-600 mt-2">
-        /admin route tree — real routes land in later phases.
-      </p>
+    <div className="min-h-screen flex items-center justify-center bg-white">
+      <div className="text-center">
+        <div
+          className="h-10 w-10 mx-auto border-4 border-primary border-t-transparent rounded-full animate-spin"
+          role="status"
+          aria-label="Loading"
+        />
+        <p className="mt-4 text-gray-600">Loading…</p>
+      </div>
     </div>
   )
 }
 
-function ShopPlaceholder() {
+function FullPageError({ message }) {
   return (
-    <div className="p-8">
-      <h1 className="text-2xl font-bold text-navy">Customer Storefront</h1>
-      <p className="text-gray-600 mt-2">
-        /shop route tree — real routes land in later phases.
-      </p>
+    <div className="min-h-screen flex items-center justify-center bg-white">
+      <div className="text-center max-w-md px-4">
+        <h1 className="text-xl font-bold text-destructive mb-2">
+          Unable to load the application
+        </h1>
+        <p className="text-gray-600">{message}</p>
+      </div>
     </div>
   )
 }
 
 export default function App() {
+  const { data, loaded, error, fetchConfig } = useAppConfig()
+
+  useEffect(() => {
+    fetchConfig()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  useEffect(() => {
+    if (!loaded) return
+    const root = document.documentElement
+    if (data.primary_color) {
+      root.style.setProperty('--color-primary', data.primary_color)
+    }
+    if (data.secondary_color) {
+      root.style.setProperty('--color-secondary', data.secondary_color)
+    }
+  }, [loaded, data])
+
+  if (error) {
+    return <FullPageError message={error} />
+  }
+
+  if (!loaded) {
+    return <FullPageLoading />
+  }
+
   return (
     <Routes>
       <Route path="/" element={<Navigate to="/admin" replace />} />
-      <Route path="/admin/*" element={<AdminPlaceholder />} />
-      <Route path="/shop/*" element={<ShopPlaceholder />} />
+      <Route path="/admin/*" element={<StaffRoutes />} />
+      <Route path="/shop/*" element={<CustomerRoutes />} />
     </Routes>
   )
 }
