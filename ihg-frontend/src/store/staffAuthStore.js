@@ -17,24 +17,50 @@ export const useStaffAuthStore = create(
 
       login: async (email, password) => {
         set({ loading: true, error: null })
+
+        let tokens
         try {
-          const tokens = await iamAuthApi.login({ email, password })
-          set({
-            accessToken: tokens.access_token,
-            refreshToken: tokens.refresh_token,
-          })
-          // Login itself only returns tokens — role/permissions come
-          // from a separate call (see brief's flagged gap/patch note).
-          const user = await iamAuthApi.getMyProfile()
-          set({ user, loading: false, error: null })
-          return user
+          tokens = await iamAuthApi.login({ email, password })
         } catch (err) {
+          // Credentials/login itself failed — nothing was ever written
+          // to the store, so nothing to roll back here.
           set({
             loading: false,
             error:
               err?.response?.data?.message ||
               err?.message ||
               'Login failed.',
+          })
+          throw err
+        }
+
+        // Tokens are valid at this point — persisted immediately.
+        // Login itself only returns tokens — role/permissions come
+        // from a separate call, GET /iam/auth/me (backlog item 3;
+        // confirmed present and mounted on this backend instance —
+        // see PROGRESS.md).
+        set({ accessToken: tokens.access_token, refreshToken: tokens.refresh_token })
+
+        try {
+          const user = await iamAuthApi.getMyProfile()
+          set({ user, loading: false, error: null })
+          return user
+        } catch (err) {
+          // Backlog item 3 fix: the tokens set just above must NOT be
+          // left sitting in localStorage on their own — that's a
+          // zombie state (a persisted "valid-looking" session with no
+          // `user`, which could confuse isAuthenticated-style checks on
+          // a later page load instead of cleanly presenting as
+          // "not logged in"). Roll everything back out, and use a
+          // message that doesn't read as "wrong password" — the
+          // credentials WERE correct; this is a different failure.
+          set({
+            accessToken: null,
+            refreshToken: null,
+            user: null,
+            loading: false,
+            error:
+              'Signed in, but your staff profile could not be loaded. Please contact an administrator.',
           })
           throw err
         }

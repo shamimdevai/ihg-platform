@@ -20,10 +20,10 @@ export const navConfig = [
       { to: '/admin/iam/staff', label: 'Staff', permission: 'iam:staff:read' },
       { to: '/admin/iam/roles', label: 'Roles', permission: 'iam:roles:read' },
       { to: '/admin/iam/departments', label: 'Departments', permission: 'iam:departments:read' },
-      // Impersonation is NOT permission-gated on the backend at all —
-      // hardcoded is_superadmin check (RBAC_MATRIX §1, §7). Mirrored
-      // here via requiresSuperadmin rather than a permission code.
-      { to: '/admin/iam/impersonation', label: 'Impersonation', requiresSuperadmin: true },
+      // Standalone Impersonation nav item retired — the action now
+      // lives inline on each row in Staff Management (StaffList.jsx),
+      // gated the same way (is_superadmin), so there's no separate
+      // screen/route to link to anymore.
     ],
   },
   {

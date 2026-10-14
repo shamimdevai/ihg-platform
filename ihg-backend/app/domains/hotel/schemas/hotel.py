@@ -31,3 +31,4 @@ class HotelRead(BaseModel):
     phone: Optional[str] = None
     email: Optional[str] = None
     is_active: bool
+    image_url: Optional[str] = None

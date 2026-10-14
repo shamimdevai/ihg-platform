@@ -6,11 +6,13 @@ import StatusBadge from '@/components/ui/StatusBadge'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import { useToast } from '@/components/ui/ToastProvider'
 import { usePermission } from '@/hooks/usePermission'
+import { useStaffAuth } from '@/hooks/useStaffAuth'
 import * as iamStaffApi from '@/api/staff/iamStaffApi'
 import * as iamRolesApi from '@/api/staff/iamRolesApi'
 import * as iamDepartmentsApi from '@/api/staff/iamDepartmentsApi'
 import StaffForm from './StaffForm'
 import InviteStaffModal from './InviteStaffModal'
+import ImpersonateModal from '@/features/staff/iam/impersonation/ImpersonateModal'
 
 const staffStatusMap = {
   true: { label: 'Active', className: 'bg-green-100 text-green-700' },
@@ -27,8 +29,18 @@ function formatLastLogin(value) {
 // usePermission('iam:staff:write'), not by convention (per the Global
 // Context Prompt: hiding UI alone isn't sufficient, but here it IS also
 // backed by the backend rejecting the same calls with 403).
+//
+// Phase 9 addition: the "Impersonate" action is gated independently of
+// canWrite, by realUser.is_superadmin — impersonation isn't a permission
+// code at all (RBAC_MATRIX §1/§7, hardcoded is_superadmin check), so it's
+// deliberately NOT folded into the iam:staff:write condition. Uses
+// realUser (the actually-logged-in account), not the impersonation-aware
+// `user` from useStaffAuth — you can't impersonate while already
+// impersonating, and this screen should always reflect who's really here.
 export default function StaffList() {
   const canWrite = usePermission('iam:staff:write')
+  const { realUser } = useStaffAuth()
+  const canImpersonate = Boolean(realUser?.is_superadmin)
   const { toast } = useToast()
   const queryClient = useQueryClient()
 
@@ -36,6 +48,7 @@ export default function StaffList() {
   const [editingStaff, setEditingStaff] = useState(null) // null = create mode
   const [inviteTarget, setInviteTarget] = useState(null)
   const [deactivateTarget, setDeactivateTarget] = useState(null)
+  const [impersonateTarget, setImpersonateTarget] = useState(null)
 
   const staffQuery = useQuery({ queryKey: ['staff'], queryFn: iamStaffApi.listStaff })
   const rolesQuery = useQuery({ queryKey: ['roles'], queryFn: iamRolesApi.listRoles })
@@ -84,22 +97,31 @@ export default function StaffList() {
       render: (row) => <StatusBadge status={String(row.is_active)} colorMap={staffStatusMap} />,
     },
     { key: 'last_login_at', header: 'Last Login', render: (row) => formatLastLogin(row.last_login_at) },
-    ...(canWrite
+    ...(canWrite || canImpersonate
       ? [
           {
             key: 'actions',
             header: '',
             render: (row) => (
               <div className="flex gap-2 justify-end">
-                <Button variant="outline" size="sm" onClick={() => { setEditingStaff(row); setFormOpen(true) }}>
-                  Edit
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => setInviteTarget(row)}>
-                  Resend Invite
-                </Button>
-                {row.is_active && (
-                  <Button variant="destructive" size="sm" onClick={() => setDeactivateTarget(row)}>
-                    Deactivate
+                {canWrite && (
+                  <>
+                    <Button variant="outline" size="sm" onClick={() => { setEditingStaff(row); setFormOpen(true) }}>
+                      Edit
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => setInviteTarget(row)}>
+                      Resend Invite
+                    </Button>
+                    {row.is_active && (
+                      <Button variant="destructive" size="sm" onClick={() => setDeactivateTarget(row)}>
+                        Deactivate
+                      </Button>
+                    )}
+                  </>
+                )}
+                {canImpersonate && row.id !== realUser.id && (
+                  <Button variant="outline" size="sm" onClick={() => setImpersonateTarget(row)}>
+                    Impersonate
                   </Button>
                 )}
               </div>
@@ -158,6 +180,14 @@ export default function StaffList() {
           confirmLabel="Deactivate"
           variant="destructive"
           loading={deactivateMutation.isPending}
+        />
+      )}
+
+      {canImpersonate && (
+        <ImpersonateModal
+          open={Boolean(impersonateTarget)}
+          onClose={() => setImpersonateTarget(null)}
+          staff={impersonateTarget}
         />
       )}
     </div>

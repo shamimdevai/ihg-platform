@@ -2,7 +2,7 @@
 from typing import List, Optional
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domains.iam.models.staff_user import StaffUser
@@ -74,3 +74,35 @@ async def soft_delete(db: AsyncSession, staff: StaffUser, *, deleted_by_staff_id
     staff.deleted_at = datetime.now(timezone.utc)
     staff.deleted_by_staff_id = deleted_by_staff_id
     await db.flush()
+
+
+async def count_by_role_id(db: AsyncSession, role_id: UUID) -> int:
+    """Count active (non-soft-deleted) staff currently assigned to a role.
+
+    Used by DELETE /iam/roles/{role_id} to block deleting a role still in
+    use — StaffUser.role_id is NOT NULL, so a staff account can never be
+    left without a role; those staff must be reassigned first.
+    """
+    result = await db.execute(
+        select(func.count())
+        .select_from(StaffUser)
+        .where(StaffUser.role_id == role_id, StaffUser.is_deleted.is_(False))
+    )
+    return result.scalar_one()
+
+
+async def count_by_department_id(db: AsyncSession, department_id: UUID) -> int:
+    """Count active (non-soft-deleted) staff currently assigned to a
+    department. Used by DELETE /iam/departments/{department_id} to block
+    deleting a department still in use. department_id IS nullable on
+    StaffUser (unlike role_id), but this still blocks rather than
+    silently clearing it — an explicit reassignment is required, same
+    "reassign before delete" rule as role deletion, not an invisible
+    side effect of an unrelated action.
+    """
+    result = await db.execute(
+        select(func.count())
+        .select_from(StaffUser)
+        .where(StaffUser.department_id == department_id, StaffUser.is_deleted.is_(False))
+    )
+    return result.scalar_one()

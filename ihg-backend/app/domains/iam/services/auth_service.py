@@ -183,7 +183,7 @@ async def forgot_password(db: AsyncSession, *, email: str) -> None:
     raw_token = await password_reset_service.generate_token(
         db, principal_type="staff", principal_id=staff.id, purpose="reset"
     )
-    reset_link = f"{settings.APP_BASE_URL}/reset-password?token={raw_token}"
+    reset_link = f"{settings.APP_BASE_URL}/admin/reset-password?token={raw_token}"
     await email_service.send_email(
         to_email=staff.email,
         subject="Reset your password",

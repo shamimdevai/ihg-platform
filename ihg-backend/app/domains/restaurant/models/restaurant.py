@@ -19,3 +19,5 @@ class Restaurant(Base, UUIDPKMixin, TimestampMixin, SoftDeleteMixin):
     phone: Mapped[Optional[str]] = mapped_column(String(30), nullable=True)
     email: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    # Public-facing photo, uploaded via POST /restaurant/restaurants/{id}/image.
+    image_url: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)

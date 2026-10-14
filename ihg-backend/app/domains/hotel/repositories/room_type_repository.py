@@ -36,3 +36,12 @@ async def save(db: AsyncSession, room_type: RoomType) -> RoomType:
     await db.flush()
     await db.refresh(room_type)
     return room_type
+
+async def soft_delete(db: AsyncSession, room_type: RoomType, *, deleted_by_staff_id: UUID) -> None:
+    """Soft-delete a room type. Never hard-delete business records."""
+    from datetime import datetime, timezone
+
+    room_type.is_deleted = True
+    room_type.deleted_at = datetime.now(timezone.utc)
+    room_type.deleted_by_staff_id = deleted_by_staff_id
+    await db.flush()

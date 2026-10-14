@@ -5,8 +5,11 @@ Mounts the /api/v1 router (settings domain endpoints as of Phase 2), the unversi
 loads company_config at startup so a misconfigured config/company.yaml fails fast
 instead of at first PDF/email render.
 """
+from pathlib import Path
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from app.api.v1.api import api_router
 from app.core.company_config import company_config
@@ -49,6 +52,17 @@ def create_app() -> FastAPI:
 
     app.include_router(health_router)
     app.include_router(api_router)
+
+    # Serves everything upload_service.py writes under UPLOAD_DIR (menu
+    # item images today; hotel invoice PDFs and anything else added
+    # later via the same service) — upload_service.save_upload() already
+    # returns a "/uploads/..." URL assuming this exact mount exists, but
+    # it never did. mkdir here defensively: StaticFiles requires the
+    # directory to exist at mount time, and a fresh container may not
+    # have written anything yet (upload_service.py only creates its
+    # subfolders lazily, on the first actual upload).
+    Path(settings.UPLOAD_DIR).mkdir(parents=True, exist_ok=True)
+    app.mount("/uploads", StaticFiles(directory=settings.UPLOAD_DIR), name="uploads")
 
     return app
 

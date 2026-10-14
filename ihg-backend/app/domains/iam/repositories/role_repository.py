@@ -66,3 +66,17 @@ async def remove_permission(db: AsyncSession, *, role_id: UUID, permission_id: U
     if link is not None:
         await db.delete(link)
         await db.flush()
+
+
+async def soft_delete(db: AsyncSession, role: Role, *, deleted_by_staff_id: UUID) -> None:
+    """Soft-delete a role. Never hard-delete business records (mirrors
+    staff_user_repository.soft_delete's own convention) — a Role row must
+    survive (e.g. for audit_log rows referencing actions taken by staff who
+    held it) even after it's no longer assignable to anyone new.
+    """
+    from datetime import datetime, timezone
+
+    role.is_deleted = True
+    role.deleted_at = datetime.now(timezone.utc)
+    role.deleted_by_staff_id = deleted_by_staff_id
+    await db.flush()

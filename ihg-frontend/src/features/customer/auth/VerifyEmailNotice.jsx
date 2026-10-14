@@ -24,10 +24,7 @@ export default function VerifyEmailNotice() {
       .verifyEmail({ token })
       .then(() => setStatus('verified'))
       .catch((err) => {
-        setError(
-          err?.response?.data?.message ||
-            'This verification link is invalid or has expired.'
-        )
+        setError(err?.response?.data?.message || 'This verification link is invalid or has expired.')
         setStatus('error')
       })
   }, [token])
@@ -47,14 +44,14 @@ export default function VerifyEmailNotice() {
   }
 
   if (status === 'verifying') {
-    return <p className="text-gray-600">Verifying your email…</p>
+    return <p className="cx-muted cx-center">Verifying your email…</p>
   }
 
   if (status === 'verified') {
     return (
-      <div className="text-center space-y-4">
-        <p className="text-gray-700">Your email has been verified.</p>
-        <Link to="/shop/login" className="text-navy hover:underline">
+      <div className="cx-form cx-center">
+        <p>Your email has been verified.</p>
+        <Link to="/shop/login" className="cx-btn cx-btn-primary cx-btn-block">
           Continue to sign in
         </Link>
       </div>
@@ -62,44 +59,39 @@ export default function VerifyEmailNotice() {
   }
 
   if (status === 'error') {
-    return <p className="text-sm text-red">{error}</p>
+    return <p className="cx-error">{error}</p>
   }
 
   // status === 'pending'
   return (
-    <div className="space-y-4">
-      <p className="text-gray-700">
+    <div className="cx-form">
+      <p>
         We've sent a verification link to{' '}
         {emailFromRegister ? <strong>{emailFromRegister}</strong> : 'your email'}
         . Click the link to activate your account.
       </p>
 
       {resendSent ? (
-        <p className="text-sm text-gray-600">
-          If that email exists and is unverified, a new link has been sent.
-        </p>
+        <p className="cx-notice">If that email exists and is unverified, a new link has been sent.</p>
       ) : (
-        <form onSubmit={handleResend} className="space-y-2">
-          <label htmlFor="resendEmail" className="block text-sm font-medium text-gray-700">
-            Didn't get it? Resend to:
-          </label>
-          <input
-            id="resendEmail"
-            type="email"
-            value={resendEmail}
-            onChange={(e) => setResendEmail(e.target.value)}
-            className="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-navy"
-          />
-          <button
-            type="submit"
-            className="w-full rounded-md bg-navy text-white py-2 font-medium hover:opacity-90"
-          >
+        <form onSubmit={handleResend} className="cx-form">
+          <div>
+            <label htmlFor="resendEmail" className="cx-field-label">Didn't get it? Resend to:</label>
+            <input
+              id="resendEmail"
+              type="email"
+              value={resendEmail}
+              onChange={(e) => setResendEmail(e.target.value)}
+              className="cx-input"
+            />
+          </div>
+          <button type="submit" className="cx-btn cx-btn-primary cx-btn-block">
             Resend verification email
           </button>
         </form>
       )}
 
-      {error && <p className="text-sm text-red">{error}</p>}
+      {error && <p className="cx-error">{error}</p>}
     </div>
   )
 }

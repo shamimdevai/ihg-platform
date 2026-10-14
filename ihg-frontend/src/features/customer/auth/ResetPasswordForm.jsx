@@ -32,45 +32,26 @@ export default function ResetPasswordForm() {
       navigate('/shop/login', { replace: true })
     } catch (err) {
       setSubmitError(
-        err?.response?.data?.message ||
-          'Could not reset password. The link may have expired.'
+        err?.response?.data?.message || 'Could not reset password. The link may have expired.'
       )
     }
   }
 
   if (!token) {
-    return (
-      <p className="text-sm text-red">
-        This reset link is missing a token. Please request a new one.
-      </p>
-    )
+    return <p className="cx-error">This reset link is missing a token. Please request a new one.</p>
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
+    <form onSubmit={handleSubmit(onSubmit)} className="cx-form" noValidate>
       <div>
-        <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700">
-          New password
-        </label>
-        <input
-          id="newPassword"
-          type="password"
-          autoComplete="new-password"
-          {...register('newPassword')}
-          className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-navy"
-        />
-        {errors.newPassword && (
-          <p className="mt-1 text-sm text-red">{errors.newPassword.message}</p>
-        )}
+        <label htmlFor="newPassword" className="cx-field-label">New password</label>
+        <input id="newPassword" type="password" autoComplete="new-password" {...register('newPassword')} className="cx-input" />
+        {errors.newPassword && <p className="cx-error">{errors.newPassword.message}</p>}
       </div>
 
-      {submitError && <p className="text-sm text-red">{submitError}</p>}
+      {submitError && <p className="cx-error">{submitError}</p>}
 
-      <button
-        type="submit"
-        disabled={isSubmitting}
-        className="w-full rounded-md bg-navy text-white py-2 font-medium hover:opacity-90 disabled:opacity-50"
-      >
+      <button type="submit" disabled={isSubmitting} className="cx-btn cx-btn-primary cx-btn-block">
         {isSubmitting ? 'Resetting…' : 'Reset password'}
       </button>
     </form>

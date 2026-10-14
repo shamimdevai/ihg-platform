@@ -3,9 +3,11 @@ from datetime import date
 from typing import List, Optional
 from uuid import UUID
 
+from fastapi import UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import ConflictError, NotFoundError, ValidationError
+from app.shared_kernel.services import upload_service
 from app.domains.hotel.models.hotel import Hotel
 from app.domains.hotel.models.room import Room
 from app.domains.hotel.models.room_type import RoomType
@@ -106,3 +108,102 @@ async def is_room_available(
         exclude_booking_id=exclude_booking_id,
     )
     return len(overlapping) == 0
+
+
+# --- Room types (continued) -----------------------------------------------------
+
+async def update_room_type(db: AsyncSession, room_type_id: UUID, **fields) -> RoomType:
+    room_type = await get_room_type(db, room_type_id)
+    for key, value in fields.items():
+        if value is not None:
+            setattr(room_type, key, value)
+    return await room_type_repository.save(db, room_type)
+
+
+async def delete_room_type(db: AsyncSession, room_type_id: UUID, *, deleted_by_staff_id: UUID) -> None:
+    """Soft-delete a room type.
+
+    Raises:
+        NotFoundError: no room type with that id exists (via get_room_type).
+        ConflictError: any active (non-soft-deleted) room still uses this
+            room type — Room.room_type_id is NOT NULL, so those rooms
+            must be reassigned to a different room type first.
+    """
+    room_type = await get_room_type(db, room_type_id)
+    in_use_count = await room_repository.count_by_room_type_id(db, room_type_id)
+    if in_use_count > 0:
+        raise ConflictError(
+            f"This room type is still used by {in_use_count} room(s). "
+            "Reassign them to a different room type before deleting it."
+        )
+    await room_type_repository.soft_delete(db, room_type, deleted_by_staff_id=deleted_by_staff_id)
+
+
+# --- Rooms (continued) ------------------------------------------------------------
+
+async def update_room(db: AsyncSession, room_id: UUID, **fields) -> Room:
+    """General room edit — room_number, floor, room_type_id, is_active.
+    Deliberately separate from update_room_status (status stays its own
+    narrower, single-purpose endpoint/permission-usage pattern already
+    established).
+
+    Room_type reassignment is NOT blocked by any active booking on this
+    room: a Booking snapshots rate_per_night at creation time (see
+    booking.py's own docstring), so changing room_type_id afterwards can
+    never retroactively corrupt an existing booking's already-recorded
+    rate.
+
+    DEACTIVATION (is_active -> False) IS blocked, by explicit request, if
+    a guest is currently checked in — see the ConflictError below.
+
+    Raises:
+        NotFoundError: room, or (if provided) the new room_type_id,
+            doesn't exist.
+        ConflictError: the new room_number already exists for this hotel,
+            OR is_active is being explicitly set to False while a guest
+            is currently checked into this room.
+    """
+    room = await get_room(db, room_id)
+
+    if fields.get("is_active") is False:
+        # Strict `is False`, not a falsy check — fields.get() returns
+        # None (via RoomUpdate's Optional[bool] = None) when is_active
+        # wasn't part of this update at all, which must NOT trigger this
+        # check. Only an EXPLICIT "turn this off" does.
+        active_checkins = await booking_repository.list_all(db, room_id=room_id, status="checked_in")
+        if active_checkins:
+            raise ConflictError(
+                "Cannot deactivate this room — a guest is currently checked in. Check them out first."
+            )
+
+    new_room_number = fields.get("room_number")
+    if new_room_number is not None and new_room_number != room.room_number:
+        existing = await room_repository.get_by_hotel_and_number(db, room.hotel_id, new_room_number)
+        if existing is not None and existing.id != room.id:
+            raise ConflictError(f"Room number '{new_room_number}' already exists for this hotel.")
+
+    new_room_type_id = fields.get("room_type_id")
+    if new_room_type_id is not None:
+        await get_room_type(db, new_room_type_id)  # raises NotFoundError if missing
+
+    for key, value in fields.items():
+        if value is not None:
+            setattr(room, key, value)
+    return await room_repository.save(db, room)
+
+
+async def upload_room_type_image(db: AsyncSession, room_type_id: UUID, file: UploadFile) -> RoomType:
+    """Save an uploaded photo and store its URL on RoomType.image_url
+    (same approach as menu_service.upload_item_image)."""
+    room_type = await get_room_type(db, room_type_id)
+    result = await upload_service.save_upload(file, subfolder="room_types")
+    room_type.image_url = result.url
+    return await room_type_repository.save(db, room_type)
+
+
+async def upload_hotel_image(db: AsyncSession, hotel_id: UUID, file: UploadFile) -> Hotel:
+    """Save an uploaded photo and store its URL on Hotel.image_url."""
+    hotel = await get_hotel(db, hotel_id)
+    result = await upload_service.save_upload(file, subfolder="hotels")
+    hotel.image_url = result.url
+    return await hotel_repository.save(db, hotel)

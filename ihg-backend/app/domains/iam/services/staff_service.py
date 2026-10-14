@@ -20,7 +20,7 @@ async def _send_invite_email(db: AsyncSession, staff: StaffUser) -> None:
     raw_token = await password_reset_service.generate_token(
         db, principal_type="staff", principal_id=staff.id, purpose="invite"
     )
-    invite_link = f"{settings.APP_BASE_URL}/staff/accept-invite?token={raw_token}"
+    invite_link = f"{settings.APP_BASE_URL}/admin/accept-invite?token={raw_token}"
     await email_service.send_email(
         to_email=staff.email,
         subject="You've been invited to join the team",

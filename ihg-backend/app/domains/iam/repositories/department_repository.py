@@ -44,3 +44,15 @@ async def save(db: AsyncSession, department: Department) -> Department:
     await db.flush()
     await db.refresh(department)
     return department
+
+
+async def soft_delete(db: AsyncSession, department: Department, *, deleted_by_staff_id: UUID) -> None:
+    """Soft-delete a department. Never hard-delete business records
+    (mirrors role_repository.soft_delete's own convention).
+    """
+    from datetime import datetime, timezone
+
+    department.is_deleted = True
+    department.deleted_at = datetime.now(timezone.utc)
+    department.deleted_by_staff_id = deleted_by_staff_id
+    await db.flush()

@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.v1.deps import get_db, require_permission
-from app.domains.hotel.schemas.room import RoomCreate, RoomRead, RoomStatusUpdate
+from app.domains.hotel.schemas.room import RoomCreate, RoomRead, RoomStatusUpdate, RoomUpdate
 from app.domains.hotel.services import room_service
 from app.shared_kernel.schemas.response_envelope import envelope
 
@@ -31,6 +31,12 @@ async def list_rooms(
 async def get_room(room_id: UUID, db: AsyncSession = Depends(get_db)) -> dict:
     room = await room_service.get_room(db, room_id)
     return envelope(data=RoomRead.model_validate(room))
+
+
+@router.put("/{room_id}", dependencies=[Depends(require_permission("hotel:room:write"))])
+async def update_room(room_id: UUID, payload: RoomUpdate, db: AsyncSession = Depends(get_db)) -> dict:
+    room = await room_service.update_room(db, room_id, **payload.model_dump())
+    return envelope(data=RoomRead.model_validate(room), message="Room updated.")
 
 
 @router.put("/{room_id}/status", dependencies=[Depends(require_permission("hotel:room:write"))])

@@ -74,3 +74,25 @@ async def save(db: AsyncSession, booking: Booking) -> Booking:
     await db.flush()
     await db.refresh(booking)
     return booking
+
+
+async def find_booked_room_ids(
+    db: AsyncSession,
+    *,
+    hotel_id: UUID,
+    check_in_date: date,
+    check_out_date: date,
+) -> set:
+    """IDs of every room in a hotel that has an active (reserved/checked_in)
+    booking overlapping [check_in_date, check_out_date). One query for the
+    whole hotel, used by the public availability search.
+    """
+    stmt = select(Booking.room_id).where(
+        Booking.hotel_id == hotel_id,
+        Booking.is_deleted.is_(False),
+        Booking.status.in_(_ACTIVE_STATUSES),
+        Booking.check_in_date < check_out_date,
+        Booking.check_out_date > check_in_date,
+    )
+    result = await db.execute(stmt)
+    return set(result.scalars().all())

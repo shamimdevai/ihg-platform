@@ -99,7 +99,12 @@ async def place_order(
     for line in items:
         menu_item = await menu_service.get_item(db, line["menu_item_id"])
         quantity = int(line["quantity"])
-        line_total = float(menu_item.price) * quantity
+        # Snapshots the item's EFFECTIVE price (post-discount), not the
+        # raw list price — otherwise a discount would only ever be
+        # cosmetic on the menu browse screen and never actually affect
+        # what gets charged. See menu_service.get_effective_price().
+        unit_price = menu_service.get_effective_price(menu_item)
+        line_total = unit_price * quantity
         subtotal += line_total
         await dine_in_order_repository.add_item(
             db,
@@ -107,7 +112,7 @@ async def place_order(
             menu_item_id=menu_item.id,
             item_name=menu_item.name,
             quantity=quantity,
-            unit_price=menu_item.price,
+            unit_price=unit_price,
             line_total=line_total,
             special_instructions=line.get("special_instructions"),
         )

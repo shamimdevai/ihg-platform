@@ -2,7 +2,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useState } from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { useCustomerAuth } from '../../../hooks/useCustomerAuth'
 
 const schema = z.object({
@@ -26,66 +26,38 @@ export default function LoginForm() {
     setSubmitError(null)
     try {
       await login(email, password)
-      const redirectTo = location.state?.from?.pathname || '/shop'
+      // Keep the query string so e.g. /shop/book?roomTypeId=… survives login.
+      const from = location.state?.from
+      const redirectTo = from ? `${from.pathname}${from.search || ''}${from.hash || ''}` : '/shop'
       navigate(redirectTo, { replace: true })
     } catch (err) {
-      setSubmitError(
-        err?.response?.data?.message || 'Invalid email or password.'
-      )
+      setSubmitError(err?.response?.data?.message || 'Invalid email or password.')
     }
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
+    <form onSubmit={handleSubmit(onSubmit)} className="cx-form" noValidate>
       <div>
-        <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-          Email
-        </label>
-        <input
-          id="email"
-          type="email"
-          autoComplete="username"
-          {...register('email')}
-          className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-navy"
-        />
-        {errors.email && (
-          <p className="mt-1 text-sm text-red">{errors.email.message}</p>
-        )}
+        <label htmlFor="email" className="cx-field-label">Email</label>
+        <input id="email" type="email" autoComplete="username" {...register('email')} className="cx-input" />
+        {errors.email && <p className="cx-error">{errors.email.message}</p>}
       </div>
 
       <div>
-        <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-          Password
-        </label>
-        <input
-          id="password"
-          type="password"
-          autoComplete="current-password"
-          {...register('password')}
-          className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-navy"
-        />
-        {errors.password && (
-          <p className="mt-1 text-sm text-red">{errors.password.message}</p>
-        )}
+        <label htmlFor="password" className="cx-field-label">Password</label>
+        <input id="password" type="password" autoComplete="current-password" {...register('password')} className="cx-input" />
+        {errors.password && <p className="cx-error">{errors.password.message}</p>}
       </div>
 
-      {submitError && <p className="text-sm text-red">{submitError}</p>}
+      {submitError && <p className="cx-error">{submitError}</p>}
 
-      <button
-        type="submit"
-        disabled={isSubmitting}
-        className="w-full rounded-md bg-navy text-white py-2 font-medium hover:opacity-90 disabled:opacity-50"
-      >
+      <button type="submit" disabled={isSubmitting} className="cx-btn cx-btn-primary cx-btn-block">
         {isSubmitting ? 'Signing in…' : 'Sign in'}
       </button>
 
-      <div className="flex justify-between text-sm">
-        <a href="/shop/forgot-password" className="text-navy hover:underline">
-          Forgot your password?
-        </a>
-        <a href="/shop/register" className="text-navy hover:underline">
-          Create an account
-        </a>
+      <div className="cx-links-row">
+        <Link to="/shop/forgot-password" className="cx-link">Forgot your password?</Link>
+        <Link to="/shop/register" className="cx-link">Create an account</Link>
       </div>
     </form>
   )

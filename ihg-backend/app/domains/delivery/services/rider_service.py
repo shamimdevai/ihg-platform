@@ -122,6 +122,57 @@ async def set_rider_status(db: AsyncSession, rider_id: UUID, status: str) -> Del
     return await delivery_rider_repository.save(db, rider)
 
 
+async def _release_assignment(db: AsyncSession, assignment: DeliveryAssignment) -> None:
+    """Deactivate an assignment AND free its rider back to "available".
+
+    Backlog item 9 fix: this used to be done inline, only inside
+    assign_rider_to_order() below, and ONLY deactivated the assignment —
+    it never reset the bumped rider's own status, leaving them stuck
+    "busy" indefinitely even though they were no longer assigned to
+    anything. Factored out here so both assign_rider_to_order() (when a
+    different rider bumps an existing active assignment) and the new
+    cancel_assignment() share the identical, now-correct behavior.
+    """
+    assignment.is_active = False
+    assignment.cancelled_at = datetime.now(timezone.utc)
+    assignment.status = "cancelled"
+    await delivery_assignment_repository.save(db, assignment)
+
+    rider = await get_rider(db, assignment.rider_id)
+    rider.status = "available"
+    await delivery_rider_repository.save(db, rider)
+
+
+async def cancel_assignment(db: AsyncSession, assignment_id: UUID) -> DeliveryAssignment:
+    """Cancel/unassign an active delivery assignment (backlog item 9 —
+    no such endpoint existed before this).
+
+    Frees the rider back to "available" (via _release_assignment) and
+    reverts the order back to "ready_for_pickup" so it can be
+    re-dispatched to a different rider — without this, the order would
+    be stuck "assigned" with no active assignment and could never be
+    re-dispatched (assign_rider_to_order() only accepts orders currently
+    "ready_for_pickup").
+
+    Raises:
+        NotFoundError: no assignment with that id exists.
+        ConflictError: the assignment is already inactive (already
+            cancelled, picked up, or delivered).
+    """
+    assignment = await get_assignment(db, assignment_id)
+    if not assignment.is_active:
+        raise ConflictError("This assignment is no longer active.")
+
+    await _release_assignment(db, assignment)
+
+    order = await delivery_order_service.get_order(db, assignment.order_id)
+    if order.status == "assigned":
+        order.status = "ready_for_pickup"
+        await delivery_order_repository.save(db, order)
+
+    return assignment
+
+
 async def assign_rider_to_order(
     db: AsyncSession, *, order_id: UUID, rider_id: UUID, assigned_by_staff_id: Optional[UUID] = None
 ) -> DeliveryAssignment:
@@ -146,10 +197,10 @@ async def assign_rider_to_order(
 
     existing = await delivery_assignment_repository.get_active_for_order(db, order_id)
     if existing is not None:
-        existing.is_active = False
-        existing.cancelled_at = datetime.now(timezone.utc)
-        existing.status = "cancelled"
-        await delivery_assignment_repository.save(db, existing)
+        # Fixed as part of backlog item 9 — now correctly frees the
+        # BUMPED rider back to "available" too (see _release_assignment's
+        # own docstring for the bug this replaced).
+        await _release_assignment(db, existing)
 
     assignment = await delivery_assignment_repository.create(
         db,

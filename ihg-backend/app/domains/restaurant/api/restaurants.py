@@ -4,7 +4,7 @@ gated by hotel:room:* rather than a separate property-level permission code.
 """
 from uuid import UUID
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, File, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.v1.deps import get_db, require_permission
@@ -37,3 +37,13 @@ async def get_restaurant(restaurant_id: UUID, db: AsyncSession = Depends(get_db)
 async def update_restaurant(restaurant_id: UUID, payload: RestaurantUpdate, db: AsyncSession = Depends(get_db)) -> dict:
     restaurant = await restaurant_service.update_restaurant(db, restaurant_id, **payload.model_dump())
     return envelope(data=RestaurantRead.model_validate(restaurant), message="Restaurant updated.")
+
+
+@router.post("/{restaurant_id}/image", dependencies=[Depends(require_permission("restaurant:table:write"))])
+async def upload_restaurant_image(
+    restaurant_id: UUID,
+    file: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    restaurant = await restaurant_service.upload_restaurant_image(db, restaurant_id, file)
+    return envelope(data=RestaurantRead.model_validate(restaurant), message="Restaurant image uploaded.")

@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import CustomerProtectedRoute from './CustomerProtectedRoute'
 import CustomerLayout from '../layouts/CustomerLayout'
+import CustomerContent from '../components/customer/CustomerContent'
 import RouteComingSoon from '../components/RouteComingSoon'
 
 import RegisterPage from '../pages/customer/RegisterPage'
@@ -8,37 +9,48 @@ import LoginPage from '../pages/customer/LoginPage'
 import VerifyEmailPage from '../pages/customer/VerifyEmailPage'
 import ForgotPasswordPage from '../pages/customer/ForgotPasswordPage'
 import ResetPasswordPage from '../pages/customer/ResetPasswordPage'
+import HomePage from '../pages/customer/HomePage'
+import RoomsPage from '../pages/customer/RoomsPage'
+import MenuPage from '../pages/customer/MenuPage'
+import CartPage from '../pages/customer/CartPage'
+import CheckoutPage from '../pages/customer/CheckoutPage'
+import OrderHistoryPage from '../pages/customer/OrderHistoryPage'
+import OrderTrackingPage from '../pages/customer/OrderTrackingPage'
+import AddressesPage from '../pages/customer/AddressesPage'
+import ProfilePage from '../pages/customer/ProfilePage'
 
 export default function CustomerRoutes() {
   return (
     <Routes>
-      {/* Public — no auth required. Must stay reachable WITHOUT
-          CustomerProtectedRoute, or an unauthenticated visitor trying to
-          register/log in would be redirect-looped back to login. */}
+      {/* Auth screens — public, no layout (unchanged). */}
       <Route path="register" element={<RegisterPage />} />
       <Route path="login" element={<LoginPage />} />
       <Route path="verify-email" element={<VerifyEmailPage />} />
       <Route path="forgot-password" element={<ForgotPasswordPage />} />
       <Route path="reset-password" element={<ResetPasswordPage />} />
 
-      {/* Protected — everything below requires a valid customer session.
-          No real content yet (Phases 26–29 fill these in); this phase
-          only needs the shell + working reserved routes. */}
-      <Route
-        element={
-          <CustomerProtectedRoute>
-            <CustomerLayout />
-          </CustomerProtectedRoute>
-        }
-      >
-        <Route index element={<RouteComingSoon title="Welcome" />} />
-        <Route path="menu" element={<RouteComingSoon title="Menu" />} />
-        <Route path="cart" element={<RouteComingSoon title="Cart" />} />
-        <Route path="checkout" element={<RouteComingSoon title="Checkout" />} />
-        <Route path="orders" element={<RouteComingSoon title="My Orders" />} />
-        <Route path="orders/:orderId" element={<RouteComingSoon title="Order Tracking" />} />
-        <Route path="addresses" element={<RouteComingSoon title="Addresses" />} />
-        <Route path="profile" element={<RouteComingSoon title="Profile" />} />
+      {/* Site shell — header/footer/theme for everything below. */}
+      <Route element={<CustomerLayout />}>
+        {/* PUBLIC, full-width home page */}
+        <Route index element={<HomePage />} />
+
+        {/* Padded content pages */}
+        <Route element={<CustomerContent />}>
+          {/* PUBLIC — browse without logging in */}
+          <Route path="rooms" element={<RoomsPage />} />
+          <Route path="menu" element={<MenuPage />} />
+          <Route path="cart" element={<CartPage />} />
+
+          {/* PROTECTED — login required (returns here afterwards) */}
+          <Route element={<CustomerProtectedRoute />}>
+            <Route path="book" element={<RouteComingSoon title="Room booking" />} />
+            <Route path="checkout" element={<CheckoutPage />} />
+            <Route path="orders" element={<OrderHistoryPage />} />
+            <Route path="orders/:orderId" element={<OrderTrackingPage />} />
+            <Route path="addresses" element={<AddressesPage />} />
+            <Route path="profile" element={<ProfilePage />} />
+          </Route>
+        </Route>
       </Route>
 
       <Route path="*" element={<Navigate to="/shop" replace />} />

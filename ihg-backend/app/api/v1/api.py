@@ -30,6 +30,7 @@ from app.domains.hotel.api.checkin import router as hotel_checkin_router
 from app.domains.hotel.api.checkout import router as hotel_checkout_router
 from app.domains.hotel.api.hotels import router as hotel_hotels_router
 from app.domains.hotel.api.housekeeping import router as hotel_housekeeping_router
+from app.domains.hotel.api.public_catalog import router as hotel_public_router
 from app.domains.hotel.api.invoices import router as hotel_invoices_router
 from app.domains.hotel.api.rooms import router as hotel_rooms_router
 from app.domains.hotel.api.service_requests import router as hotel_service_requests_router
@@ -45,9 +46,11 @@ from app.domains.inventory.api.stock import router as inventory_stock_router
 from app.domains.inventory.api.suppliers import router as inventory_suppliers_router
 from app.domains.payments.api.admin_refund_requests import router as admin_refund_requests_router
 from app.domains.payments.api.payments import router as payments_router
+from app.domains.restaurant.api.customer_menu import router as restaurant_customer_menu_router
 from app.domains.restaurant.api.dine_in_orders import router as restaurant_orders_router
 from app.domains.restaurant.api.kitchen import router as restaurant_kitchen_router
 from app.domains.restaurant.api.menu import router as restaurant_menu_router
+from app.domains.restaurant.api.public_catalog import router as restaurant_public_router
 from app.domains.restaurant.api.reservations import router as restaurant_reservations_router
 from app.domains.restaurant.api.restaurants import router as restaurant_restaurants_router
 from app.domains.restaurant.api.tables import router as restaurant_tables_router
@@ -86,6 +89,7 @@ api_router.include_router(admin_refund_requests_router)
 # --- Hotel (module-gated: hotel_module_enabled) ---
 _hotel_gate = [Depends(require_module_enabled("hotel"))]
 api_router.include_router(hotel_hotels_router, dependencies=_hotel_gate)
+api_router.include_router(hotel_public_router, dependencies=_hotel_gate)
 api_router.include_router(hotel_rooms_router, dependencies=_hotel_gate)
 api_router.include_router(hotel_bookings_router, dependencies=_hotel_gate)
 api_router.include_router(hotel_checkin_router, dependencies=_hotel_gate)
@@ -97,6 +101,8 @@ api_router.include_router(hotel_service_requests_router, dependencies=_hotel_gat
 # --- Restaurant (module-gated: restaurant_module_enabled) ---
 _restaurant_gate = [Depends(require_module_enabled("restaurant"))]
 api_router.include_router(restaurant_restaurants_router, dependencies=_restaurant_gate)
+api_router.include_router(restaurant_customer_menu_router, dependencies=_restaurant_gate)
+api_router.include_router(restaurant_public_router, dependencies=_restaurant_gate)
 api_router.include_router(restaurant_tables_router, dependencies=_restaurant_gate)
 api_router.include_router(restaurant_reservations_router, dependencies=_restaurant_gate)
 api_router.include_router(restaurant_menu_router, dependencies=_restaurant_gate)

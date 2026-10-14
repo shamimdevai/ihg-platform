@@ -4,7 +4,8 @@ from uuid import UUID
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.v1.deps import get_db, require_permission
+from app.api.v1.deps import get_current_staff_user, get_db, require_permission
+from app.domains.iam.models.staff_user import StaffUser
 from app.domains.iam.schemas.department import DepartmentCreate, DepartmentRead, DepartmentUpdate
 from app.domains.iam.services import department_service
 from app.shared_kernel.schemas.response_envelope import envelope
@@ -40,3 +41,14 @@ async def update_department(department_id: UUID, payload: DepartmentUpdate, db: 
         db, department_id, name=payload.name, description=payload.description
     )
     return envelope(data=DepartmentRead.model_validate(department), message="Department updated.")
+
+
+@router.delete("/{department_id}", dependencies=[Depends(require_permission("iam:departments:write"))])
+async def delete_department(
+    department_id: UUID,
+    current_staff: StaffUser = Depends(get_current_staff_user),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """Soft-delete a department."""
+    await department_service.delete_department(db, department_id, deleted_by_staff_id=current_staff.id)
+    return envelope(message="Department deleted.")

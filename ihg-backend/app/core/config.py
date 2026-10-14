@@ -24,7 +24,7 @@ class Settings(BaseSettings):
     APP_ENV: str = "development"
     APP_DEBUG: bool = True
     APP_SECRET_KEY: str
-    APP_BASE_URL: str = "http://localhost:3000"
+    APP_BASE_URL: str = "http://localhost:80"
 
     # Database
     DATABASE_URL: str

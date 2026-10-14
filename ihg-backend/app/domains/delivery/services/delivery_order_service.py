@@ -122,7 +122,13 @@ async def place_order(
         if menu_item.restaurant_id != restaurant_id:
             raise ValidationError("menu_item_id does not belong to the given restaurant_id.")
         quantity = int(line["quantity"])
-        line_total = float(menu_item.price) * quantity
+        # Snapshots the item's EFFECTIVE price (post-discount) — mirrors
+        # dine_in_order_service.place_order()'s identical fix, so a
+        # discount applies consistently to both dine-in and delivery
+        # orders, not just one of the two places a customer can order
+        # from.
+        unit_price = menu_service.get_effective_price(menu_item)
+        line_total = unit_price * quantity
         subtotal += line_total
         await delivery_order_repository.add_item(
             db,
@@ -130,7 +136,7 @@ async def place_order(
             menu_item_id=menu_item.id,
             item_name=menu_item.name,
             quantity=quantity,
-            unit_price=menu_item.price,
+            unit_price=unit_price,
             line_total=line_total,
             special_instructions=line.get("special_instructions"),
         )

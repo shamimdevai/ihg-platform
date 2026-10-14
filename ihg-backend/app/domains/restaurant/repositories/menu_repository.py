@@ -5,7 +5,7 @@ its category/restaurant menu.
 from typing import List, Optional
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domains.restaurant.models.menu_category import MenuCategory
@@ -83,3 +83,38 @@ async def save_item(db: AsyncSession, item: MenuItem) -> MenuItem:
     await db.flush()
     await db.refresh(item)
     return item
+
+
+async def soft_delete_category(db: AsyncSession, category: MenuCategory, *, deleted_by_staff_id: UUID) -> None:
+    """Soft-delete a menu category. Never hard-delete business records."""
+    from datetime import datetime, timezone
+
+    category.is_deleted = True
+    category.deleted_at = datetime.now(timezone.utc)
+    category.deleted_by_staff_id = deleted_by_staff_id
+    await db.flush()
+
+
+async def soft_delete_item(db: AsyncSession, item: MenuItem, *, deleted_by_staff_id: UUID) -> None:
+    """Soft-delete a menu item. Never hard-delete business records."""
+    from datetime import datetime, timezone
+
+    item.is_deleted = True
+    item.deleted_at = datetime.now(timezone.utc)
+    item.deleted_by_staff_id = deleted_by_staff_id
+    await db.flush()
+
+
+async def count_items_by_category_id(db: AsyncSession, category_id: UUID) -> int:
+    """Count active (non-soft-deleted) menu items currently in a category.
+
+    Used by DELETE /restaurant/menu/categories/{category_id} to block
+    deleting a category still in use — MenuItem.category_id is NOT NULL,
+    so those items must be moved to a different category first.
+    """
+    result = await db.execute(
+        select(func.count())
+        .select_from(MenuItem)
+        .where(MenuItem.category_id == category_id, MenuItem.is_deleted.is_(False))
+    )
+    return result.scalar_one()

@@ -4,11 +4,12 @@ from uuid import UUID
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.v1.deps import get_db, require_permission
-from app.domains.iam.repositories import role_repository
+from app.api.v1.deps import get_current_staff_user, get_db, require_permission
+from app.domains.iam.models.staff_user import StaffUser
+from app.domains.iam.repositories import role_repository, staff_user_repository
 from app.domains.iam.schemas.role import RoleAssignPermissions, RoleCreate, RoleRead, RoleUpdate
 from app.domains.iam.services import department_service, rbac_service  # noqa: F401 (department_service kept for symmetry/future use)
-from app.core.exceptions import NotFoundError
+from app.core.exceptions import ConflictError, NotFoundError
 from app.shared_kernel.schemas.response_envelope import envelope
 
 router = APIRouter(prefix="/iam/roles", tags=["iam-roles"])
@@ -67,3 +68,42 @@ async def remove_permission(role_id: UUID, permission_id: UUID, db: AsyncSession
     """Remove a single permission from a role."""
     await rbac_service.remove_permission_from_role(db, role_id=role_id, permission_id=permission_id)
     return envelope(message="Permission removed from role.")
+
+
+@router.delete("/{role_id}", dependencies=[Depends(require_permission("iam:roles:write"))])
+async def delete_role(
+    role_id: UUID,
+    current_staff: StaffUser = Depends(get_current_staff_user),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """Soft-delete a role.
+
+    Blocked (409 ConflictError) if:
+      - the role currently holds the platform-wide "*" permission grant —
+        deleting the only wildcard-holding role would leave the platform
+        with no super-privileged role at all, a more destructive outcome
+        than the ordinary "role in use" case below, so this is checked
+        first; or
+      - any active (non-soft-deleted) staff member is still assigned to
+        it — StaffUser.role_id is NOT NULL (a staff account can never be
+        left without a role), so those staff must be reassigned to a
+        different role before this role can be deleted.
+    """
+    role = await role_repository.get_by_id(db, role_id)
+    if role is None:
+        raise NotFoundError("Role not found.")
+
+    if any(p.code == "*" for p in role.permissions):
+        raise ConflictError(
+            "This role holds the platform-wide '*' permission and cannot be deleted."
+        )
+
+    assigned_count = await staff_user_repository.count_by_role_id(db, role_id)
+    if assigned_count > 0:
+        raise ConflictError(
+            f"This role is still assigned to {assigned_count} staff member(s). "
+            "Reassign them to a different role before deleting it."
+        )
+
+    await role_repository.soft_delete(db, role, deleted_by_staff_id=current_staff.id)
+    return envelope(message="Role deleted.")

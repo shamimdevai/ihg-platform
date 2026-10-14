@@ -7,8 +7,29 @@ import ForgotPasswordPage from '../pages/staff/ForgotPasswordPage'
 import ResetPasswordPage from '../pages/staff/ResetPasswordPage'
 import AcceptInvitePage from '../pages/staff/AcceptInvitePage'
 import DashboardPage from '../pages/staff/DashboardPage'
+import DepartmentsPage from '../pages/staff/iam/DepartmentsPage'
 import StaffPage from '../pages/staff/iam/StaffPage'
-import RouteComingSoon from '../components/RouteComingSoon'
+import SettingsPage from '../pages/staff/settings/SettingsPage'
+import RolesPage from '../pages/staff/iam/RolesPage'
+import GuestsPage from '../pages/staff/customers/GuestsPage'
+import ItemsPage from '../pages/staff/inventory/ItemsPage'
+import SuppliersPage from '../pages/staff/inventory/SuppliersPage'
+import StockPage from '../pages/staff/inventory/StockPage'
+import AlertsPage from '../pages/staff/inventory/AlertsPage'
+import PaymentsPage from '../pages/staff/payments/PaymentsPage'
+import RefundsPage from '../pages/staff/payments/RefundsPage'
+import RoomsPage from '../pages/staff/hotel/RoomsPage'
+import BookingsPage from '../pages/staff/hotel/BookingsPage'
+import HousekeepingPage from '../pages/staff/hotel/HousekeepingPage'
+import InvoicesPage from '../pages/staff/hotel/InvoicesPage'
+import TablesPage from '../pages/staff/restaurant/TablesPage'
+import MenuPage from '../pages/staff/restaurant/MenuPage'
+import OrdersPage from '../pages/staff/restaurant/OrdersPage'
+import KitchenPage from '../pages/staff/restaurant/KitchenPage'
+import DeliveryOrdersPage from '../pages/staff/delivery/OrdersPage'
+import DeliveryRidersPage from '../pages/staff/delivery/RidersPage'
+import MyDeliveriesPage from '../pages/staff/delivery/MyDeliveriesPage'
+import ReportsPage from '../pages/staff/reporting/ReportsPage'
 
 // Every reserved (not-yet-built) route below is wrapped in its own
 // StaffProtectedRoute with the real requiredPermission from navConfig.js
@@ -45,7 +66,7 @@ export default function StaffRoutes() {
           path="iam/roles"
           element={
             <StaffProtectedRoute requiredPermission="iam:roles:read">
-              <RouteComingSoon title="Roles & Permissions" />
+              <RolesPage />
             </StaffProtectedRoute>
           }
         />
@@ -53,24 +74,15 @@ export default function StaffRoutes() {
           path="iam/departments"
           element={
             <StaffProtectedRoute requiredPermission="iam:departments:read">
-              <RouteComingSoon title="Departments" />
+              <DepartmentsPage />
             </StaffProtectedRoute>
           }
         />
-        <Route
-          path="iam/impersonation"
-          element={
-            <StaffProtectedRoute>
-              <RouteComingSoon title="Impersonation" />
-            </StaffProtectedRoute>
-          }
-        />
-
         <Route
           path="customers/guests"
           element={
             <StaffProtectedRoute requiredPermission="customers:guests:read">
-              <RouteComingSoon title="Hotel Guests" />
+              <GuestsPage />
             </StaffProtectedRoute>
           }
         />
@@ -79,7 +91,7 @@ export default function StaffRoutes() {
           path="hotel/rooms"
           element={
             <StaffProtectedRoute requiredPermission="hotel:room:read">
-              <RouteComingSoon title="Rooms" />
+              <RoomsPage />
             </StaffProtectedRoute>
           }
         />
@@ -87,7 +99,7 @@ export default function StaffRoutes() {
           path="hotel/bookings"
           element={
             <StaffProtectedRoute requiredPermission="hotel:booking:read">
-              <RouteComingSoon title="Bookings" />
+              <BookingsPage />
             </StaffProtectedRoute>
           }
         />
@@ -95,7 +107,7 @@ export default function StaffRoutes() {
           path="hotel/housekeeping"
           element={
             <StaffProtectedRoute requiredPermission="hotel:housekeeping:read">
-              <RouteComingSoon title="Housekeeping" />
+              <HousekeepingPage />
             </StaffProtectedRoute>
           }
         />
@@ -103,7 +115,7 @@ export default function StaffRoutes() {
           path="hotel/invoices"
           element={
             <StaffProtectedRoute requiredPermission="hotel:invoice:read">
-              <RouteComingSoon title="Invoices" />
+              <InvoicesPage />
             </StaffProtectedRoute>
           }
         />
@@ -112,7 +124,7 @@ export default function StaffRoutes() {
           path="restaurant/tables"
           element={
             <StaffProtectedRoute requiredPermission="restaurant:table:read">
-              <RouteComingSoon title="Tables & Reservations" />
+               <TablesPage />
             </StaffProtectedRoute>
           }
         />
@@ -120,7 +132,7 @@ export default function StaffRoutes() {
           path="restaurant/menu"
           element={
             <StaffProtectedRoute requiredPermission="restaurant:menu:read">
-              <RouteComingSoon title="Menu" />
+              <MenuPage />
             </StaffProtectedRoute>
           }
         />
@@ -128,7 +140,7 @@ export default function StaffRoutes() {
           path="restaurant/orders"
           element={
             <StaffProtectedRoute requiredPermission="restaurant:order:read">
-              <RouteComingSoon title="Orders" />
+              <OrdersPage />
             </StaffProtectedRoute>
           }
         />
@@ -136,7 +148,7 @@ export default function StaffRoutes() {
           path="restaurant/kitchen"
           element={
             <StaffProtectedRoute requiredPermission="restaurant:kitchen:read">
-              <RouteComingSoon title="Kitchen" />
+              <KitchenPage />
             </StaffProtectedRoute>
           }
         />
@@ -145,7 +157,7 @@ export default function StaffRoutes() {
           path="delivery/orders"
           element={
             <StaffProtectedRoute requiredPermission="delivery:rider:write">
-              <RouteComingSoon title="Orders & Dispatch" />
+              <DeliveryOrdersPage />
             </StaffProtectedRoute>
           }
         />
@@ -153,7 +165,7 @@ export default function StaffRoutes() {
           path="delivery/riders"
           element={
             <StaffProtectedRoute requiredPermission="delivery:rider:write">
-              <RouteComingSoon title="Riders" />
+              <DeliveryRidersPage />
             </StaffProtectedRoute>
           }
         />
@@ -161,7 +173,7 @@ export default function StaffRoutes() {
           path="delivery/my-deliveries"
           element={
             <StaffProtectedRoute requiredPermission="delivery:order:update_status">
-              <RouteComingSoon title="My Deliveries" />
+              <MyDeliveriesPage />
             </StaffProtectedRoute>
           }
         />
@@ -170,7 +182,7 @@ export default function StaffRoutes() {
           path="inventory/items"
           element={
             <StaffProtectedRoute requiredPermission="inventory:item:read">
-              <RouteComingSoon title="Inventory Items" />
+              <ItemsPage />
             </StaffProtectedRoute>
           }
         />
@@ -178,7 +190,7 @@ export default function StaffRoutes() {
           path="inventory/suppliers"
           element={
             <StaffProtectedRoute requiredPermission="inventory:supplier:read">
-              <RouteComingSoon title="Suppliers" />
+              <SuppliersPage />
             </StaffProtectedRoute>
           }
         />
@@ -186,7 +198,7 @@ export default function StaffRoutes() {
           path="inventory/stock"
           element={
             <StaffProtectedRoute requiredPermission="inventory:stock:read">
-              <RouteComingSoon title="Stock" />
+              <StockPage />
             </StaffProtectedRoute>
           }
         />
@@ -194,7 +206,7 @@ export default function StaffRoutes() {
           path="inventory/alerts"
           element={
             <StaffProtectedRoute requiredPermission="inventory:alert:read">
-              <RouteComingSoon title="Low-Stock Alerts" />
+              <AlertsPage />
             </StaffProtectedRoute>
           }
         />
@@ -203,7 +215,7 @@ export default function StaffRoutes() {
           path="payments"
           element={
             <StaffProtectedRoute requiredPermission="payments:read">
-              <RouteComingSoon title="Payments" />
+              <PaymentsPage />
             </StaffProtectedRoute>
           }
         />
@@ -211,7 +223,7 @@ export default function StaffRoutes() {
           path="payments/refunds"
           element={
             <StaffProtectedRoute requiredPermission="payments:refund:review">
-              <RouteComingSoon title="Refund Review" />
+              <RefundsPage />
             </StaffProtectedRoute>
           }
         />
@@ -220,7 +232,7 @@ export default function StaffRoutes() {
           path="reporting"
           element={
             <StaffProtectedRoute requiredPermission="reporting:read">
-              <RouteComingSoon title="Reports" />
+              <ReportsPage />
             </StaffProtectedRoute>
           }
         />
@@ -229,7 +241,7 @@ export default function StaffRoutes() {
           path="settings"
           element={
             <StaffProtectedRoute requiredPermission="settings:read">
-              <RouteComingSoon title="Settings" />
+              <SettingsPage />
             </StaffProtectedRoute>
           }
         />

@@ -25,3 +25,5 @@ class RoomType(Base, UUIDPKMixin, TimestampMixin, SoftDeleteMixin):
     capacity: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     # Free-form/CSV text — no dedicated amenities table yet, not required by scope.
     amenities: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    # Public-facing photo, uploaded via POST .../room-types/{id}/image.
+    image_url: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)

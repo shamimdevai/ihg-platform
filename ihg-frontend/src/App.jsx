@@ -1,8 +1,10 @@
 import { useEffect } from 'react'
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useNavigate } from 'react-router-dom'
 import { useAppConfig } from './hooks/useAppConfig'
 import StaffRoutes from './routes/staffRoutes'
 import CustomerRoutes from './routes/customerRoutes'
+import { registerAuthRedirect } from './lib/authRedirect'
+import { startCrossTabAuthSync } from './store/crossTabAuthSync'
 
 function FullPageLoading() {
   return (
@@ -34,6 +36,24 @@ function FullPageError({ message }) {
 
 export default function App() {
   const { data, loaded, error, fetchConfig } = useAppConfig()
+  const navigate = useNavigate()
+
+  // Registers this App instance's real navigate() as the target for
+  // authRefreshInterceptor's forced-logout redirect (backlog item 1) —
+  // must happen unconditionally on mount, before the loading/error
+  // early-returns below, so a 401 that fires during initial /config
+  // load still has somewhere to redirect to.
+  useEffect(() => {
+    registerAuthRedirect(navigate)
+  }, [navigate])
+
+  // Cross-tab auth sync — attaches once per page load (see
+  // crossTabAuthSync.js's own doc comment for what this covers and
+  // why). Also needs to run before the loading/error early-returns
+  // below, for the same reason as the registration above.
+  useEffect(() => {
+    startCrossTabAuthSync()
+  }, [])
 
   useEffect(() => {
     fetchConfig()
@@ -61,9 +81,10 @@ export default function App() {
 
   return (
     <Routes>
-      <Route path="/" element={<Navigate to="/admin" replace />} />
+      <Route path="/" element={<Navigate to="/shop" replace />} />
       <Route path="/admin/*" element={<StaffRoutes />} />
       <Route path="/shop/*" element={<CustomerRoutes />} />
+      <Route path="*" element={<Navigate to="/shop" replace />} />
     </Routes>
   )
 }

@@ -116,3 +116,11 @@ async def list_assignments(
 async def get_assignment(assignment_id: UUID, db: AsyncSession = Depends(get_db)) -> dict:
     assignment = await rider_service.get_assignment(db, assignment_id)
     return envelope(data=DeliveryAssignmentRead.model_validate(assignment))
+
+
+@assignments_router.post(
+    "/{assignment_id}/cancel", dependencies=[Depends(require_permission("delivery:rider:write"))]
+)
+async def cancel_assignment(assignment_id: UUID, db: AsyncSession = Depends(get_db)) -> dict:
+    assignment = await rider_service.cancel_assignment(db, assignment_id)
+    return envelope(data=DeliveryAssignmentRead.model_validate(assignment), message="Assignment cancelled.")

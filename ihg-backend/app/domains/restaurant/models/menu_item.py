@@ -12,7 +12,8 @@ made-to-order dish with no single trackable ingredient in this phase's scope).
 import uuid
 from typing import Optional
 
-from sqlalchemy import Boolean, ForeignKey, Numeric, String, Text
+from datetime import datetime
+from sqlalchemy import Boolean, DateTime, ForeignKey, Numeric, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -39,3 +40,15 @@ class MenuItem(Base, UUIDPKMixin, TimestampMixin, SoftDeleteMixin):
     # Loosely coupled to inventory.inventory_items.id — no FK, cross-domain rule.
     inventory_item_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), nullable=True)
     inventory_qty_per_unit: Mapped[Optional[float]] = mapped_column(Numeric(10, 3), nullable=True)
+
+    # Discount fields. discount_type/discount_value must be set TOGETHER
+    # (enforced in menu_service._validate_discount_fields, not at the DB
+    # level) — "percentage" (0-100) or "fixed_amount" (a currency amount
+    # less than price). discount_starts_at/discount_ends_at are optional
+    # scheduling bounds; a discount with neither set runs indefinitely
+    # once configured. See services/discount_utils.py for how these
+    # combine into an actual charged price.
+    discount_type: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
+    discount_value: Mapped[Optional[float]] = mapped_column(Numeric(12, 2), nullable=True)
+    discount_starts_at: Mapped[Optional["datetime"]] = mapped_column(DateTime(timezone=True), nullable=True)
+    discount_ends_at: Mapped[Optional["datetime"]] = mapped_column(DateTime(timezone=True), nullable=True)

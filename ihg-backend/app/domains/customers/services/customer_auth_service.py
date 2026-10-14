@@ -84,7 +84,7 @@ async def _send_verification_email(db: AsyncSession, customer: Customer) -> None
     raw_token = await password_reset_service.generate_token(
         db, principal_type="customer", principal_id=customer.id, purpose="verify_email"
     )
-    verification_link = f"{settings.APP_BASE_URL}/verify-email?token={raw_token}"
+    verification_link = f"{settings.APP_BASE_URL}/shop/verify-email?token={raw_token}"
     await email_service.send_email(
         to_email=customer.email,
         subject="Verify your email address",
@@ -262,7 +262,7 @@ async def forgot_password(db: AsyncSession, *, email: str) -> None:
     raw_token = await password_reset_service.generate_token(
         db, principal_type="customer", principal_id=customer.id, purpose="reset"
     )
-    reset_link = f"{settings.APP_BASE_URL}/reset-password?token={raw_token}"
+    reset_link = f"{settings.APP_BASE_URL}/shop/reset-password?token={raw_token}"
     await email_service.send_email(
         to_email=customer.email,
         subject="Reset your password",

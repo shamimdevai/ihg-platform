@@ -2,9 +2,11 @@
 from typing import List, Optional
 from uuid import UUID
 
+from fastapi import UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import ConflictError, NotFoundError, ValidationError
+from app.shared_kernel.services import upload_service
 from app.domains.restaurant.models.dining_table import DiningTable
 from app.domains.restaurant.models.restaurant import Restaurant
 from app.domains.restaurant.repositories import dining_table_repository, restaurant_repository
@@ -69,3 +71,11 @@ async def update_table_status(db: AsyncSession, table_id: UUID, status: str) -> 
     table = await get_table(db, table_id)
     table.status = status
     return await dining_table_repository.save(db, table)
+
+
+async def upload_restaurant_image(db: AsyncSession, restaurant_id: UUID, file: UploadFile) -> Restaurant:
+    """Save an uploaded photo and store its URL on Restaurant.image_url."""
+    restaurant = await get_restaurant(db, restaurant_id)
+    result = await upload_service.save_upload(file, subfolder="restaurants")
+    restaurant.image_url = result.url
+    return await restaurant_repository.save(db, restaurant)
